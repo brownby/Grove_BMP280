@@ -36,8 +36,9 @@ bool BMP280::init(int i2c_addr) {
     return true;
 }
 
-float BMP280::getTemperature(void) {
+BMP280_temp_t BMP280::getTemperature(void) {
     int32_t var1, var2;
+    BMP280_temp_t temp;
 
     int32_t adc_T = bmp280Read24(BMP280_REG_TEMPDATA);
     // Check if the last transport successed
@@ -53,12 +54,17 @@ float BMP280::getTemperature(void) {
             ((int32_t)dig_T3)) >> 14;
 
     t_fine = var1 + var2;
-    float T = (t_fine * 5 + 128) >> 8;
-    return T / 100;
+    int32_t T = (t_fine * 5 + 128) >> 8;
+
+    temp.integral = (int16_t)(T / 100);
+    temp.fractional = (uint16_t)(abs(T) % 100);
+ 
+    return temp;
 }
 
-uint32_t BMP280::getPressure(void) {
+BMP280_press_t BMP280::getPressure(void) {
     int64_t var1, var2, p;
+    BMP280_press_t press;
 
     // Call getTemperature to get t_fine
     getTemperature();
@@ -84,19 +90,11 @@ uint32_t BMP280::getPressure(void) {
     var1 = (((int64_t)dig_P9) * (p >> 13) * (p >> 13)) >> 25;
     var2 = (((int64_t)dig_P8) * p) >> 19;
     p = ((p + var1 + var2) >> 8) + (((int64_t)dig_P7) << 4);
-    return (uint32_t)p / 256;
-}
 
-float BMP280::calcAltitude(float pressure) {
-    if (!isTransport_OK) {
-        return 0;
-    }
-    float A = pressure / 101325;
-    float B = 1 / 5.25588;
-    float C = pow(A, B);
-    C = 1.0 - C;
-    C = C / 0.0000225577;
-    return C;
+    press.integral = (uint32_t)(p >> 8); // shift right to get 24 bits before decimal point
+    press.fractional = (uint8_t)(p & 0xFF); // remove all bits except last 8
+
+    return press;
 }
 
 uint8_t BMP280::bmp280Read8(uint8_t reg) {

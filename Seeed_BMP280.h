@@ -29,11 +29,23 @@
 #define BMP280_REG_PRESSUREDATA    0xF7
 #define BMP280_REG_TEMPDATA        0xFA
 
+typedef struct 
+{
+  int16_t  integral;
+  uint16_t fractional;
+} BMP280_temp_t;
+
+typedef struct 
+{
+  uint32_t integral;
+  uint8_t fractional;
+} BMP280_press_t;
+
 class BMP280 {
   public:
     bool init(int i2c_addr = BMP280_ADDRESS);
-    float getTemperature(void);
-    uint32_t getPressure(void);
+    BMP280_temp_t getTemperature(void);
+    BMP280_press_t getPressure(void);
     float calcAltitude(float pressure);
   private:
     bool isTransport_OK;
