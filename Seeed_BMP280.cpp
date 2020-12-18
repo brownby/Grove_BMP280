@@ -43,7 +43,7 @@ BMP280_temp_t BMP280::getTemperature(void) {
     int32_t adc_T = bmp280Read24(BMP280_REG_TEMPDATA);
     // Check if the last transport successed
     if (!isTransport_OK) {
-        return 0;
+        return (BMP280_temp_t){0, 0};
     }
     adc_T >>= 4;
     var1 = (((adc_T >> 3) - ((int32_t)(dig_T1 << 1))) *
@@ -70,7 +70,7 @@ BMP280_press_t BMP280::getPressure(void) {
     getTemperature();
     // Check if the last transport successed
     if (!isTransport_OK) {
-        return 0;
+        return (BMP280_press_t){0, 0};
     }
 
     int32_t adc_P = bmp280Read24(BMP280_REG_PRESSUREDATA);
@@ -83,7 +83,7 @@ BMP280_press_t BMP280::getPressure(void) {
     var1 = ((var1 * var1 * (int64_t)dig_P3) >> 8) + ((var1 * (int64_t)dig_P2) << 12);
     var1 = (((((int64_t)1) << 47) + var1)) * ((int64_t)dig_P1) >> 33;
     if (var1 == 0) {
-        return 0; // avoid exception caused by division by zero
+        return (BMP280_press_t){0, 0}; // avoid exception caused by division by zero
     }
     p = 1048576 - adc_P;
     p = (((p << 31) - var2) * 3125) / var1;
